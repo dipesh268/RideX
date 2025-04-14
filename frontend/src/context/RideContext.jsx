@@ -1,7 +1,6 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
-import { ridesAPI } from '../api/api';
+import { ridesAPI, socket } from '../api/api';
 import { useAuth } from './AuthContext';
 import { 
   calculateDistance, 
@@ -22,8 +21,63 @@ export function RideProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
   const [availableRides, setAvailableRides] = useState([]);
+  const [scheduledRides, setScheduledRides] = useState([]);
+  const [isConnected, setIsConnected] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(true);
   
   const { currentUser, updateLocation, isDriver } = useAuth();
+  
+  // // Monitor connection status
+  // useEffect(() => {
+  //   const unsubscribe = addConnectionListener(setIsConnected);
+  //   return unsubscribe;
+  // }, []);
+  
+  // Setup socket events
+  useEffect(() => {
+    if (currentUser) {
+      socket.connect();
+      
+      // Join user-specific room
+      socket.emit('join', { userId: currentUser._id, userType: currentUser.userType });
+      
+      // Handle new ride requests (for drivers)
+      if (isDriver) {
+        socket.on('ride:new', (ride) => {
+          toast.info('New ride request available!');
+          setAvailableRides(prev => [ride, ...prev]);
+        });
+      }
+      
+      // Handle ride updates
+      socket.on('ride:update', (updatedRide) => {
+        setRides(prevRides => 
+          prevRides.map(ride => ride._id === updatedRide._id ? updatedRide : ride)
+        );
+        
+        if (activeRide && activeRide._id === updatedRide._id) {
+          setActiveRide(updatedRide);
+          
+          // Show appropriate notification based on ride status
+          if (updatedRide.status === 'accepted') {
+            toast.success('A driver has accepted your ride!');
+          } else if (updatedRide.status === 'in-progress') {
+            toast.info('Your ride has started');
+          } else if (updatedRide.status === 'completed') {
+            toast.success('Your ride has been completed');
+          } else if (updatedRide.status === 'cancelled') {
+            toast.info('Your ride has been cancelled');
+          }
+        }
+      });
+      
+      return () => {
+        socket.off('ride:new');
+        socket.off('ride:update');
+        socket.disconnect();
+      };
+    }
+  }, [currentUser, isDriver, activeRide]);
   
   useEffect(() => {
     setLoading(true);
@@ -38,7 +92,6 @@ export function RideProvider({ children }) {
           
           setUserLocation(location);
           
-          // If user is logged in, update their location in the database
           if (currentUser) {
             try {
               await updateLocation({
@@ -66,41 +119,65 @@ export function RideProvider({ children }) {
       toast.error("Geolocation is not supported by your browser. Please enter your address manually.");
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, updateLocation]);
 
-  // Load ride history for the current user
-  useEffect(() => {
-    const loadRideHistory = async () => {
-      if (!currentUser) return;
-      
-      try {
-        const response = await ridesAPI.getRideHistory();
-        setRides(response.data);
-        
-        // Check if there's an active ride
-        const activeRides = response.data.filter(ride => 
-          ["requested", "accepted", "in-progress"].includes(ride.status)
-        );
-        
-        if (activeRides.length > 0) {
-          setActiveRide(activeRides[0]);
-        }
-      } catch (error) {
-        console.error("Failed to load ride history:", error);
-      }
-    };
+  // Load ride history for current user
+  const loadRideHistory = async () => {
+    if (!currentUser) return;
     
+    try {
+      const response = await ridesAPI.getRideHistory();
+      console.log("Loaded ride history:", response.data);
+      setRides(response.data);
+      
+      // Extract scheduled rides
+      const scheduled = response.data.filter(ride => 
+        ride.isScheduled && ride.status === 'requested'
+      );
+      setScheduledRides(scheduled);
+      
+      // Check if there's an active ride
+      const activeRides = response.data.filter(ride => 
+        ["requested", "accepted", "in-progress"].includes(ride.status) && 
+        !ride.isScheduled
+      );
+      
+      if (activeRides.length > 0) {
+        setActiveRide(activeRides[0]);
+      } else {
+        setActiveRide(null);
+      }
+    } catch (error) {
+      console.error("Failed to load ride history:", error);
+    }
+  };
+
+  useEffect(() => {
     loadRideHistory();
-  }, [currentUser]);
+    
+    // Set up auto-refresh for ride history if enabled
+    if (autoRefresh && currentUser) {
+      const interval = setInterval(() => {
+        loadRideHistory();
+      }, 20000); // Every 20 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [currentUser, autoRefresh]);
   
-  // For drivers: Load available ride requests
+  // Load available rides for drivers
   useEffect(() => {
     const loadAvailableRides = async () => {
       if (!currentUser || !isDriver) return;
       
       try {
+        // Get immediate ride requests
         const response = await ridesAPI.getAvailableRides();
         setAvailableRides(response.data);
+        
+        // Get scheduled rides separately
+        const scheduledResponse = await ridesAPI.getScheduledRides();
+        setScheduledRides(scheduledResponse.data);
       } catch (error) {
         console.error("Failed to load available rides:", error);
       }
@@ -109,11 +186,13 @@ export function RideProvider({ children }) {
     if (isDriver) {
       loadAvailableRides();
       
-      // Refresh available rides every 30 seconds
-      const interval = setInterval(loadAvailableRides, 30000);
-      return () => clearInterval(interval);
+      // Refresh available rides on interval if auto-refresh is enabled
+      if (autoRefresh) {
+        const interval = setInterval(loadAvailableRides, 15000); // Every 15 seconds
+        return () => clearInterval(interval);
+      }
     }
-  }, [currentUser, isDriver]);
+  }, [currentUser, isDriver, autoRefresh]);
 
   const requestRide = async (rideDetails) => {
     setLoading(true);
@@ -125,10 +204,9 @@ export function RideProvider({ children }) {
         throw new Error("Authentication required");
       }
       
-      // Convert frontend format to backend format
       console.log("Requesting ride with details:", rideDetails);
       
-
+      // Ensure coordinates are properly structured for MongoDB GeoJSON
       const rideRequestData = {
         pickup: {
           type: "Point",
@@ -149,18 +227,23 @@ export function RideProvider({ children }) {
         fare: rideDetails.fare,
         distance: parseFloat(rideDetails.distance),
         duration: rideDetails.estimatedTime,
-        vehicleType: rideDetails.vehicleType || 'economy'
+        vehicleType: rideDetails.vehicleType || 'economy',
+        scheduledTime: rideDetails.scheduledTime || null,
+        isScheduled: !!rideDetails.scheduledTime
       };
       
       console.log("Formatted ride request data:", rideRequestData);
-
+      
       const response = await ridesAPI.requestRide(rideRequestData);
       const newRide = response.data;
       
-      setRides(prev => [newRide, ...prev]);
-      setActiveRide(newRide);
+      await loadRideHistory(); // Refresh ride history to include the new ride
       
-      toast.info("Your ride request has been submitted. Searching for drivers nearby.");
+      if (rideDetails.scheduledTime) {
+        toast.success("Your ride has been scheduled successfully!");
+      } else {
+        toast.info("Your ride request has been submitted. Searching for drivers nearby.");
+      }
       
       setLoading(false);
       return newRide;
@@ -171,19 +254,28 @@ export function RideProvider({ children }) {
     }
   };
 
+  // Enhanced cancel ride functionality for both rider and driver
   const cancelRide = async (rideId) => {
     setLoading(true);
     
     try {
-      await ridesAPI.cancelRide(rideId);
+      console.log("Cancelling ride:", rideId);
+      const response = await ridesAPI.cancelRide(rideId);
       
-      setRides(prev => prev.map(ride => 
-        ride._id === rideId ? { ...ride, status: 'cancelled' } : ride
-      ));
-      
-      if (activeRide && activeRide._id === rideId) {
-        setActiveRide(prev => ({ ...prev, status: 'cancelled' }));
-        toast.info("Ride cancelled successfully");
+      // Update both the rides array and activeRide if it exists
+      if (response.data) {
+        setRides(prev => prev.map(ride => 
+          ride._id === rideId ? { ...ride, status: 'cancelled' } : ride
+        ));
+        
+        if (activeRide && activeRide._id === rideId) {
+          setActiveRide(prev => ({ ...prev, status: 'cancelled' }));
+        }
+        
+        toast.success("Ride cancelled successfully");
+        
+        // Refresh the ride history
+        await loadRideHistory();
       }
       
       setLoading(false);
@@ -191,6 +283,36 @@ export function RideProvider({ children }) {
     } catch (error) {
       setLoading(false);
       console.error("Failed to cancel ride:", error);
+      toast.error(error.response?.data?.message || "Failed to cancel ride");
+      throw error;
+    }
+  };
+  
+  // Added reject ride functionality for drivers
+  const rejectRide = async (rideId) => {
+    setLoading(true);
+    
+    try {
+      console.log("Rejecting ride:", rideId);
+      
+      // Call reject API endpoint if it exists
+      try {
+        await ridesAPI.rejectRide(rideId);
+      } catch (error) {
+        // If the endpoint doesn't exist yet, just continue with the UI update
+        console.warn("Reject ride API may not be implemented:", error);
+      }
+      
+      // Remove the ride from available rides array
+      setAvailableRides(prev => prev.filter(ride => ride._id !== rideId));
+      
+      toast.info("Ride request ignored");
+      
+      setLoading(false);
+      return true;
+    } catch (error) {
+      setLoading(false);
+      console.error("Failed to reject ride:", error);
       throw error;
     }
   };
@@ -211,6 +333,9 @@ export function RideProvider({ children }) {
         toast.success("Thank you for riding with us! Your ride is complete.");
       }
       
+      // Refresh ride history
+      await loadRideHistory();
+      
       setLoading(false);
       return true;
     } catch (error) {
@@ -220,7 +345,6 @@ export function RideProvider({ children }) {
     }
   };
 
-  // For drivers to accept a ride
   const acceptRide = async (rideId) => {
     setLoading(true);
     
@@ -228,12 +352,14 @@ export function RideProvider({ children }) {
       const response = await ridesAPI.acceptRide(rideId);
       const updatedRide = response.data;
       
-      // Update available rides list by removing the accepted ride
+      // Remove from available rides list
       setAvailableRides(prev => prev.filter(ride => ride._id !== rideId));
       
-      // Add to driver's rides list
-      setRides(prev => [updatedRide, ...prev]);
-      setActiveRide(updatedRide);
+      // Also remove from scheduled rides if it was a scheduled ride
+      setScheduledRides(prev => prev.filter(ride => ride._id !== rideId));
+      
+      // Refresh ride history to include the newly accepted ride
+      await loadRideHistory();
       
       toast.success("You've accepted the ride. Please head to the pickup location.");
       
@@ -246,7 +372,6 @@ export function RideProvider({ children }) {
     }
   };
 
-  // For drivers to start a ride
   const startRide = async (rideId) => {
     setLoading(true);
     
@@ -305,50 +430,19 @@ export function RideProvider({ children }) {
     if (!addressText || addressText.trim() === '') {
       throw new Error("Address text is empty");
     }
-  
-    const isCurrentLocation = addressText.trim().toLowerCase() === 'current location';
-  
-    if (isCurrentLocation) {
-      // If already available from context, use it
+    
+    if (addressText.toLowerCase() === 'current location') {
       if (userLocation) {
         return {
           name: "Current Location",
           lat: userLocation.lat,
           lng: userLocation.lng
         };
-      }
-  
-      // Else try to get fresh coordinates
-      if (navigator.geolocation) {
-        try {
-          const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 10000
-            });
-          });
-  
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-  
-          // Optional: update the context state
-          setUserLocation({ lat, lng });
-  
-          return {
-            name: "Current Location",
-            lat,
-            lng
-          };
-        } catch (error) {
-          console.error("Geolocation error while resolving current location:", error);
-          throw new Error("Failed to retrieve your current location. Please enter it manually.");
-        }
       } else {
-        throw new Error("Geolocation is not supported in your browser.");
+        throw new Error("User location not available. Please enable location services or enter an address manually.");
       }
     }
-  
-    // For other text inputs, use geocoding service
+    
     try {
       return await geocodeIndianAddress(addressText);
     } catch (error) {
@@ -356,7 +450,6 @@ export function RideProvider({ children }) {
       throw error;
     }
   };
-  
 
   const value = {
     rides,
@@ -370,10 +463,15 @@ export function RideProvider({ children }) {
     estimateFare: estimateRideFare,
     calculateDistance: calculateRideDistance,
     geocodeAddress,
-    // Driver specific methods
     acceptRide,
     startRide,
-    availableRides
+    availableRides,
+    rejectRide,
+    scheduledRides,
+    loadRideHistory,
+    isConnected,
+    autoRefresh,
+    setAutoRefresh
   };
 
   return (
@@ -381,4 +479,4 @@ export function RideProvider({ children }) {
       {children}
     </RideContext.Provider>
   );
-}
+};

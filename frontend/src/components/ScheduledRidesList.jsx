@@ -2,7 +2,6 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { Calendar, Clock, MapPin } from 'lucide-react';
-import { Button } from './ui/button';
 
 const ScheduledRidesList = ({ rides, onCancel }) => {
   if (!rides || rides.length === 0) {
@@ -79,13 +78,13 @@ const ScheduledRidesList = ({ rides, onCancel }) => {
           </div>
           
           <div className="flex justify-end">
-            <Button 
+            <button 
               variant="destructive" 
               size="sm"
               onClick={() => onCancel(ride._id)}
             >
               Cancel Ride
-            </Button>
+            </button>
           </div>
         </div>
       ))}

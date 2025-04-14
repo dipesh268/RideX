@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const DriverCard = ({ driver, ride, onCallDriver, onCancelRide, onComplete }) => {
@@ -86,7 +85,7 @@ const DriverCard = ({ driver, ride, onCallDriver, onCancelRide, onComplete }) =>
         </div>
       </div>
       
-      {ride && ['accepted', 'in-progress'].includes(ride.status) && (
+      {ride && ['accepted', 'in-progress', 'requested'].includes(ride.status) && (
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button
             onClick={() => onCallDriver && onCallDriver(driver)}

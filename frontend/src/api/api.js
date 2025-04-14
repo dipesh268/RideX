@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { toast } from 'sonner';
 import { io } from 'socket.io-client';
@@ -9,14 +10,18 @@ export const socket = io(socketUrl, {
   reconnection: true
 });
 
-
 // Create an axios instance
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: `${socketUrl}/api`,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 10000 // 10 second timeout
 });
+
+// Connection state
+let isConnected = false;
+let connectionListeners = [];
 
 // Add a request interceptor for adding auth token to requests
 api.interceptors.request.use(
@@ -37,7 +42,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('API Error:', error.response || error);
-
+    
     if (error.response?.status === 401) {
       // Handle authentication errors
       const message = error.response?.data?.message || 'Authentication failed. Please log in again.';
@@ -48,6 +53,9 @@ api.interceptors.response.use(
         localStorage.removeItem('token');
         window.location.href = '/login'; // Redirect to login page
       }
+    } else if (error.code === 'ECONNABORTED' || error.message === 'Network Error' || !error.response) {
+      // Connection issues
+      updateConnectionState(false);
     } else {
       // Handle other errors
       const message = error.response?.data?.message || 'An error occurred';
@@ -62,7 +70,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
   login: (credentials) => api.post('/auth/login', credentials),
-  updateUser: (userData) => api.put('/auth/update-user', userData), // Changed to PUT for idempotent updates
+  updateUser: (userData) => api.put('/auth/update-user', userData),
 };
 
 // User API
@@ -84,6 +92,57 @@ export const ridesAPI = {
   startRide: (rideId) => api.patch(`/rides/${rideId}/start`),
   completeRide: (rideId) => api.patch(`/rides/${rideId}/complete`),
   cancelRide: (rideId) => api.patch(`/rides/${rideId}/cancel`),
+  rejectRide: (rideId) => api.patch(`/rides/${rideId}/reject`),
 };
+
+// Connection checking
+export const connectionAPI = {
+  // Modified to handle connection failures gracefully
+  checkHealth: () => {
+    return api.get('/health')
+      .then(response => {
+        updateConnectionState(true);
+        return response;
+      })
+      .catch(error => {
+        // Only update connection state for network errors
+        if (error.code === 'ECONNABORTED' || error.message === 'Network Error' || !error.response) {
+          updateConnectionState(false);
+        } else if (error.response?.status === 404) {
+          // If the health endpoint doesn't exist yet but server responded, still consider connected
+          updateConnectionState(true);
+        }
+        return Promise.reject(error);
+      });
+  }
+};
+
+export function checkConnection() {
+  return connectionAPI.checkHealth()
+    .then(() => true)
+    .catch(() => false);
+}
+
+// Connection state management
+export function updateConnectionState(connected) {
+  if (isConnected !== connected) {
+    isConnected = connected;
+    // Notify all listeners
+    connectionListeners.forEach(listener => listener(connected));
+  }
+}
+
+// Subscribe to connection changes
+export function subscribeToConnection(callback) {
+  connectionListeners.push(callback);
+  return () => {
+    connectionListeners = connectionListeners.filter(listener => listener !== callback);
+  };
+}
+
+// Get current connection state
+export function getConnectionState() {
+  return isConnected;
+}
 
 export default api;
