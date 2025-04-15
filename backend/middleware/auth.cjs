@@ -4,7 +4,7 @@ const User = require('../models/User.cjs');
 const auth = async (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
-    console.log("Authorization Header:", authHeader);
+    // console.log("Authorization Header:", authHeader);
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: 'Authorization token missing or malformed' });

@@ -15,6 +15,9 @@ const DriverDashboard = () => {
   const { currentUser, isDriver } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [processingRideId] = useState(null);
+  
+
   
   // Redirect if not logged in or not a driver
   useEffect(() => {
@@ -115,6 +118,22 @@ const DriverHome = () => {
       setIsLoading(false);
     }
   };
+
+    // Reject a ride request
+    const handleRejectRide = async (rideId) => {
+      try {
+        setProcessingRideId(rideId);
+        setIsLoading(true);
+        await rejectRide(rideId);
+        toast.success("You have rejected the ride request");
+      } catch (error) {
+        console.error('Failed to reject ride:', error);
+        toast.error("Failed to reject the ride request");
+      } finally {
+        setIsLoading(false);
+        setProcessingRideId(null);
+      }
+    };
   
   // Start current ride
   const handleStartRide = async () => {
@@ -389,6 +408,7 @@ const DriverHome = () => {
                             {isLoading ? 'Processing...' : 'Accept'}
                           </button>
                           <button
+                            onClick={() => handleRejectRide(request._id)}
                             className="flex-1 py-2 bg-muted text-muted-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors"
                           >
                             Reject

@@ -18,7 +18,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:8080' || 'http://192.168.164.95:8080',
+    origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST"],
     credentials: true
   }
