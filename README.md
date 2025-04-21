@@ -38,7 +38,7 @@ The project is organized into two main folders:
 1. Create a `.env` file in the root directory with the following variables:
    ```
    PORT=5000
-   FRONTEND_URL=http://localhost:8080
+   FRONTEND_URL=http://localhost:5173
    MONGODB_URI=mongodb://localhost:27017/ridex
    JWT_SECRET=your_secret_key
    ```
@@ -55,4 +55,4 @@ The project is organized into two main folders:
    npm run dev
    ```
 
-4. Open your browser and navigate to `http://localhost:8080`
+4. Open your browser and navigate to `http://localhost:5173`
