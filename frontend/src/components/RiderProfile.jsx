@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
-import { User, Mail, Phone, MapPin, Shield, Save, LogOut } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Shield, Save, LogOut, Calendar,Home  } from 'lucide-react';
 
 const RiderProfile = () => {
   const { currentUser, logout, updateUser } = useAuth();
@@ -132,10 +132,42 @@ const RiderProfile = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-muted-foreground mb-1">
-                  Home Address
+                  Pin Code
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <input 
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Enter your Pin code"
+                    className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                  DOB
+                </label>
+                <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <input 
+                    type="date"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Enter your Birth Date"
+                    className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                  Home Address
+                </label>
+                <div className="relative">
+                  <Home className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <input 
                     type="text"
                     name="address"
@@ -148,7 +180,7 @@ const RiderProfile = () => {
               </div>
             </div>
           
-            <div className="mt-8 border-t border-border pt-6">
+            {/* <div className="mt-8 border-t border-border pt-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <Shield className="w-5 h-5 mr-2" />
                 Account Settings
@@ -187,7 +219,7 @@ const RiderProfile = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
             
             <div className="mt-8 border-t border-border pt-6 flex flex-col sm:flex-row gap-4">
               <button 

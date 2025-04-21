@@ -10,6 +10,7 @@ import MapView from '../components/MapView';
 import RideHistoryItem from '../components/RideHistoryItem';
 import { formatCurrency } from '../utils/mapUtils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import VehicleDetailsForm from '../components/VehicleDetailsForm';
 
 const DriverDashboard = () => {
   const { currentUser, isDriver } = useAuth();
@@ -40,6 +41,7 @@ const DriverDashboard = () => {
         <Route path="/" element={<DriverHome />} />
         <Route path="/earnings" element={<DriverEarnings />} />
         <Route path="/profile" element={<DriverProfile />} />
+        <Route path="/vehicle_details" element={<VehicleDetailsForm />} />
         <Route path="*" element={<Navigate to="/driver" replace />} />
       </Routes>
     </div>
@@ -758,7 +760,7 @@ const DriverProfile = () => {
             </div>
           </div>
           
-          <div className="mt-8 border-t border-border pt-6">
+          {/* <div className="mt-8 border-t border-border pt-6">
             <h3 className="text-lg font-semibold mb-4">Vehicle Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -814,7 +816,7 @@ const DriverProfile = () => {
               </div>
             </div>
           </div>
-          
+           */}
           <div className="mt-8 border-t border-border pt-6 flex gap-4">
             <button className="flex-1 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
               Save Changes

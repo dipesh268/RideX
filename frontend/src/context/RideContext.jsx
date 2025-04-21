@@ -60,13 +60,13 @@ export function RideProvider({ children }) {
           
           // Show appropriate notification based on ride status
           if (updatedRide.status === 'accepted') {
-            toast.success('A driver has accepted your ride!');
+            alert('A driver has accepted your ride!');
           } else if (updatedRide.status === 'in-progress') {
-            toast.info('Your ride has started');
+            alert('Your ride has started');
           } else if (updatedRide.status === 'completed') {
-            toast.success('Your ride has been completed');
+            alert('Your ride has been completed');
           } else if (updatedRide.status === 'cancelled') {
-            toast.info('Your ride has been cancelled');
+            alert('Your ride has been cancelled');
           }
         }
       });
@@ -103,7 +103,7 @@ export function RideProvider({ children }) {
             }
           }
           
-          console.log("User location obtained:", location);
+          //console.log("User location obtained:", location);
           setLoading(false);
         },
         (error) => {
@@ -116,7 +116,7 @@ export function RideProvider({ children }) {
       );
     } else {
       setUserLocation(null);
-      toast.error("Geolocation is not supported by your browser. Please enter your address manually.");
+      //toast.error("Geolocation is not supported by your browser. Please enter your address manually.");
       setLoading(false);
     }
   }, [currentUser, updateLocation]);
@@ -127,7 +127,7 @@ export function RideProvider({ children }) {
     
     try {
       const response = await ridesAPI.getRideHistory();
-      console.log("Loaded ride history:", response.data);
+      //console.log("Loaded ride history:", response.data);
       setRides(response.data);
       
       // Extract scheduled rides
@@ -204,7 +204,7 @@ export function RideProvider({ children }) {
         throw new Error("Authentication required");
       }
       
-      console.log("Requesting ride with details:", rideDetails);
+      //console.log("Requesting ride with details:", rideDetails);
       
       // Ensure coordinates are properly structured for MongoDB GeoJSON
       const rideRequestData = {
@@ -240,9 +240,9 @@ export function RideProvider({ children }) {
       await loadRideHistory(); // Refresh ride history to include the new ride
       
       if (rideDetails.scheduledTime) {
-        toast.success("Your ride has been scheduled successfully!");
+        alert("Your ride has been scheduled successfully!");
       } else {
-        toast.info("Your ride request has been submitted. Searching for drivers nearby.");
+        alert("Your ride request has been submitted. Searching for drivers nearby.");
       }
       
       setLoading(false);
@@ -272,7 +272,7 @@ export function RideProvider({ children }) {
           setActiveRide(prev => ({ ...prev, status: 'cancelled' }));
         }
         
-        toast.success("Ride cancelled successfully");
+        alert("Ride cancelled successfully");
         
         // Refresh the ride history
         await loadRideHistory();
@@ -330,7 +330,7 @@ export function RideProvider({ children }) {
       if (activeRide && activeRide._id === rideId) {
         const completed = { ...activeRide, status: 'completed', completedAt: new Date().toISOString() };
         setActiveRide(completed);
-        toast.success("Thank you for riding with us! Your ride is complete.");
+        alert("Thank you for riding with us! Your ride is complete.");
       }
       
       // Refresh ride history

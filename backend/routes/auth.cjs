@@ -139,4 +139,5 @@ router.put('/update-user', auth, async (req, res) => { // Changed to PUT and add
   }
 });
 
+
 module.exports = router;

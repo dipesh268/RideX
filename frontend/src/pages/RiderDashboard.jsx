@@ -82,7 +82,7 @@ const RiderHome = () => {
   }, [activeRide]);
   
   const handleRideRequested = (data) => {
-    console.log("Updating map with locations:", data);
+    //console.log("Updating map with locations:", data);
     
     if (data.pickup) {
       setPickupLocation(data.pickup);
@@ -112,7 +112,10 @@ const RiderHome = () => {
       console.error(error);
     }
   };
-  
+  const handleCancelSearch = async () => {
+    document.getElementById('pickup').value = '';
+    document.getElementById('destination').value = '';
+  }
   return (
     <div className="flex flex-col min-h-screen">
       <div className={`sticky top-0 z-10 transition-all duration-300 ${scrolled ? 'bg-background/95 backdrop-blur-sm shadow-md' : ''}`}>
@@ -228,7 +231,7 @@ const RiderHome = () => {
                 {isSearching && (
                   <div className="mt-3">
                     <button 
-                      onClick={handleCancelRide}
+                      onClick={handleCancelSearch}
                       className="w-full px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
                     >
                       Cancel Search

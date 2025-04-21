@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { authAPI, userAPI } from '../api/api';
@@ -50,11 +49,11 @@ export function AuthProvider({ children }) {
         localStorage.setItem('token', token);
         setCurrentUser(user);
         
-        toast.success(`Welcome, ${user.name}!`);
+        alert(`Welcome, ${user.name}!`);
         setLoading(false);
         return user;
       } catch (error) {
-        console.error('Registration failed:', error);
+        alert('Registration failed:', error);
         setLoading(false);
         throw error;
       }
@@ -71,7 +70,7 @@ export function AuthProvider({ children }) {
           localStorage.setItem('token', token);
           setCurrentUser(user);
           
-          toast.success(`Welcome back, ${user.name}!`);
+          alert(`Welcome back, ${user.name}!`);
           setLoading(false);
           return user;
         } catch (error) {

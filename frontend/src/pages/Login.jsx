@@ -78,7 +78,7 @@ const Login = () => {
         if (user.userType === 'rider') {
           navigate('/rider');
         } else {
-          navigate('/driver');
+          navigate('/driver/vehicle_details');
         }
       } catch (error) {
         setLoading(false);
@@ -165,6 +165,7 @@ const Login = () => {
                 <input
                   id="phone"
                   type="tel"
+                  pattern='[789][0-9]{9}'
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"

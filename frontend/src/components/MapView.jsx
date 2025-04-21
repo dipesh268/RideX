@@ -55,7 +55,7 @@ const MapView = ({ height = 'h-[400px]', showControls = true, pickupLocation, de
     
     // Load Leaflet and Leaflet Routing Machine from CDN if not already loaded
     if (!window.L) {
-      console.log("Loading Leaflet library...");
+      //console.log("Loading Leaflet library...");
       const linkElement = document.createElement('link');
       linkElement.rel = 'stylesheet';
       linkElement.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
@@ -162,12 +162,13 @@ const MapView = ({ height = 'h-[400px]', showControls = true, pickupLocation, de
     // Use the most accurate and recent location data
     const currentLocation = userCurrentLocation || userLocation;
     
-    console.log("Updating map with locations:", { 
-      current: currentLocation,
-      pickup: pickupLocation, 
-      destination: destinationLocation, 
-      activeRide 
-    });
+  //   console.log("Updating map with locations:", { 
+  //     current: currentLocation,
+  //     pickup: pickupLocation, 
+  //     destination: destinationLocation, 
+  //     activeRide 
+  //   }
+  // );
     
     // Clear existing markers
     clearMarkers();
@@ -194,8 +195,8 @@ const MapView = ({ height = 'h-[400px]', showControls = true, pickupLocation, de
     let pickup = getValidCoordinates(pickupLocation) || (activeRide && getValidCoordinates(activeRide.pickup));
     let destination = getValidCoordinates(destinationLocation) || (activeRide && getValidCoordinates(activeRide.dropoff));
     
-    console.log("Processing pickup location:", pickup);
-    console.log("Processing destination location:", destination);
+    //console.log("Processing pickup location:", pickup);
+    //console.log("Processing destination location:", destination);
     
     if (pickup) {
       addMarker('pickup', pickup);
@@ -252,11 +253,11 @@ const MapView = ({ height = 'h-[400px]', showControls = true, pickupLocation, de
       }
     } else if (pickup) {
       // Center on pickup if only pickup is available
-      console.log("Centering on pickup location");
+      //console.log("Centering on pickup location");
       mapInstanceRef.current.setView([pickup.lat, pickup.lng], 14);
     } else if (currentLocation) {
       // Fall back to user location
-      console.log("Centering on user location");
+      //console.log("Centering on user location");
       mapInstanceRef.current.setView([currentLocation.lat, currentLocation.lng], 14);
     }
   }, [userCurrentLocation, userLocation, pickupLocation, destinationLocation, activeRide, mapLoaded]);
@@ -268,7 +269,7 @@ const MapView = ({ height = 'h-[400px]', showControls = true, pickupLocation, de
       return;
     }
     
-    console.log(`Adding ${type} marker at:`, location);
+    //console.log(`Adding ${type} marker at:`, location);
     
     try {
       const iconHtml = createMarkerIcon(type);

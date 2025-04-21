@@ -42,11 +42,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('API Error:', error.response || error);
-    
     if (error.response?.status === 401) {
       // Handle authentication errors
       const message = error.response?.data?.message || 'Authentication failed. Please log in again.';
-      toast.error(message);
+      alert(message);
       
       // If token is invalid or expired, clear it
       if (localStorage.getItem('token')) {
@@ -59,7 +58,7 @@ api.interceptors.response.use(
     } else {
       // Handle other errors
       const message = error.response?.data?.message || 'An error occurred';
-      toast.error(message);
+      alert(message);
     }
     
     return Promise.reject(error);
@@ -79,6 +78,8 @@ export const userAPI = {
   toggleOnlineStatus: (isOnline) => api.patch('/users/status', { isOnline }),
   getCurrentUser: () => api.get('/users/me'),
   updateProfile: (userData) => api.put('/users/profile', userData),
+  updateVehicleDetails: (payload) => api.post('/users/vehicle_details', payload),
+  getVehicleDetails: () => api.get('/users/vehicle_details'),
 };
 
 // Rides API

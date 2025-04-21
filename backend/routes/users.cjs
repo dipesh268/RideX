@@ -99,4 +99,31 @@ router.get('/nearby-drivers', auth, async (req, res) => {
   }
 });
 
+router.post('/vehicle_details', async (req, res) => {
+  const userId = req.userId || req.body.userId; // adjust based on how you're passing user info (JWT recommended)
+  const { vehicle, vehicleType } = req.body;
+
+  if (!vehicle || !vehicle.make || !vehicle.model || !vehicle.licensePlate) {
+    return res.status(400).json({ message: 'Missing required vehicle fields' });
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update vehicle details
+    user.vehicle = vehicle;
+    user.vehicleType = vehicleType;
+    await user.save();
+
+    res.status(200).json({ message: 'Vehicle details updated successfully' });
+  } catch (error) {
+    console.error('Error updating vehicle details:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
 module.exports = router;

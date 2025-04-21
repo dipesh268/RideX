@@ -27,6 +27,17 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  HomeAddr: {
+    type: String,
+    trim: true
+  },
+  DOB:{
+    type: Date,
+  },
+  pincode:{
+    type:String,
+    trim:true
+  },
   isOnline: {
     type: Boolean,
     default: false

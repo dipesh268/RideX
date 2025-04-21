@@ -106,6 +106,16 @@ const Navbar = () => {
                       <Calendar className="h-4 w-4 mr-1" />
                       Scheduled Rides
                     </Link>
+                    <Link
+                      to="/Driver/vehicle_details"
+                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                        isActivePath(['/DriverEarnings']) 
+                          ? 'border-primary text-foreground' 
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      Vehicle Details
+                    </Link>
                   </>
                 )}
               </div>
