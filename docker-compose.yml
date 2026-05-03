@@ -1,0 +1,29 @@
+version: "1.0" 
+
+services: 
+  backend: 
+    build: ./backend 
+    container_name: backend 
+    restart: always 
+    ports: 
+      - "5000:5000" 
+    environment: 
+      FRONTEND_URL: "http://localhost:5173" 
+      MONGO_URI: "mongodb+srv://maheshwari262003_db_user:dipesh123@cluster0.regck1a.mongodb.net/?appName=Cluster0" 
+      JWT_SECRET: "2fa28f8696818392df7e4e9fef5823367a9dc25cd91ed66a126134ec8345d7833e2e49f2b82dcfbb8f272e39c2d332c715f60404f6b548c445a048c378d50500" 
+    networks: 
+      - app-network 
+    
+  frontend: 
+    build: ./frontend 
+    container_name: frontned 
+    restart: always 
+    ports: 
+      - "5173" 
+    depends_on: 
+      - backend 
+    networks: 
+      - app-network 
+networks: 
+  app-network: 
+    driver: bridge
